@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"strconv"
 	"time"
 )
 
@@ -54,12 +55,37 @@ func NewConfigProvider(sess *session.Session, env, region string) (Provider, err
 func (svc *secman) Import(data []byte) error {
 	return nil
 }
+
 func (svc *secman) Initialize() error {
 	return nil
 }
+
 func (svc *secman) Get(key string) ([]byte, error) {
-	return nil, nil
+	input := &secretsmanager.GetSecretValueInput{
+		SecretId:     aws.String(key),
+		VersionStage: aws.String(svc.versionStage), // VersionStage defaults to AWSCURRENT if unspecified
+	}
+	result, err := svc.man.GetSecretValue(input)
+	if err = handleAwsErr(err); err != nil {
+		return nil, err
+	}
+	// Decrypts secret using the associated KMS key.
+	// Depending on whether the secret is a string or binary, one of these fields will be populated.
+	var secretString string
+	if result.SecretString != nil {
+		secretString = *result.SecretString
+		return []byte(secretString), nil
+	} else {
+		decodedBinarySecretBytes := make([]byte, base64.StdEncoding.DecodedLen(len(result.SecretBinary)))
+		_, err = base64.StdEncoding.Decode(decodedBinarySecretBytes, result.SecretBinary)
+		if err != nil {
+			fmt.Println("Base64 Decode Error:", err)
+			return nil, err
+		}
+		return decodedBinarySecretBytes, nil
+	}
 }
+
 func (svc *secman) Put(key string, value []byte) error {
 	return nil
 }
@@ -81,25 +107,40 @@ func (svc *secman) MustGetString(key string) string {
 		return secretString
 	} else {
 		decodedBinarySecretBytes := make([]byte, base64.StdEncoding.DecodedLen(len(result.SecretBinary)))
-		len, err := base64.StdEncoding.Decode(decodedBinarySecretBytes, result.SecretBinary)
+		l, err := base64.StdEncoding.Decode(decodedBinarySecretBytes, result.SecretBinary)
 		if err != nil {
 			fmt.Println("Base64 Decode Error:", err)
 			panic(err)
 		}
-		decodedBinarySecret = string(decodedBinarySecretBytes[:len])
+		decodedBinarySecret = string(decodedBinarySecretBytes[:l])
 		return decodedBinarySecret
 	}
 }
 
 func (svc *secman) MustGetBool(key string) bool {
-	panic(ErrUnknown)
+	val := svc.MustGetString(key)
+	ret, err := strconv.ParseBool(val)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 func (svc *secman) MustGetInt(key string) int {
-	panic(ErrUnknown)
+	val := svc.MustGetString(key)
+	ret, err := strconv.Atoi(val)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 func (svc *secman) MustGetDuration(key string) time.Duration {
-	panic(ErrUnknown)
+	val := svc.MustGetString(key)
+	ret, err := time.ParseDuration(val)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 func handleAwsErr(err error) error {
