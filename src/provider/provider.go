@@ -2,12 +2,20 @@ package provider
 
 import (
 	"errors"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"time"
 )
 
 var (
 	ErrConfigNotFound = errors.New("config not found")
 )
+
+type Config struct {
+	Env         string
+	ServiceName string
+	AWSSession  *session.Session
+	AWSRegion   string
+}
 
 type Provider interface {
 	Import(data []byte) error

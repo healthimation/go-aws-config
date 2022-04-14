@@ -9,8 +9,8 @@ import (
 
 type envProvider struct{}
 
-func NewConfigProvider() (provider.Provider, error) {
-	return &envProvider{}, nil
+func NewConfigProvider() provider.Provider {
+	return &envProvider{}
 }
 
 func (svc *envProvider) Import(data []byte) error {
@@ -58,6 +58,7 @@ func (svc *envProvider) MustGetInt(key string) int {
 	}
 	return ret
 }
+
 func (svc *envProvider) MustGetDuration(key string) time.Duration {
 	val := svc.MustGetString(key)
 	ret, err := time.ParseDuration(val)
