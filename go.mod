@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/aws/aws-sdk-go v1.14.16
 	github.com/divideandconquer/go-consul-client v0.0.0-20180411171312-21e7a882dd66
+	github.com/joho/godotenv v1.4.0
 )
 
 require (

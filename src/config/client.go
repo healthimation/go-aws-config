@@ -9,7 +9,9 @@ import (
 )
 
 type configProvider struct {
-	prvd provider.Provider
+	prvd      provider.Provider
+	env       string
+	awsRegion string
 }
 
 func NewConfigProvider(source string, cfg *provider.Config) (provider.Provider, error) {
@@ -22,7 +24,7 @@ func NewConfigProvider(source string, cfg *provider.Config) (provider.Provider, 
 	case "env":
 		prvd = env.NewConfigProvider()
 	}
-	return &configProvider{prvd}, nil
+	return &configProvider{prvd, cfg.Env, cfg.AWSRegion}, nil
 }
 
 func (svc *configProvider) Import(data []byte) error {
