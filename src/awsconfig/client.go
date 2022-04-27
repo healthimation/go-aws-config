@@ -38,6 +38,18 @@ type awsLoader struct {
 
 // NewAWSLoader creates a Loader that will cache the provided namespace on initialization
 // and return data from that cache on Get
+func NewAWSLoaderWithSession(sess *session.Session, environment, serviceName string) config.Loader {
+	ret := &awsLoader{
+		environment: environment,
+		serviceName: serviceName,
+		config:      make(map[string]string),
+	}
+	ret.client = ssm.New(sess)
+	return ret
+}
+
+// NewAWSLoader creates a Loader that will cache the provided namespace on initialization
+// and return data from that cache on Get
 func NewAWSLoader(environment, serviceName string) config.Loader {
 	ret := &awsLoader{
 		environment: environment,
