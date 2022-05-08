@@ -28,8 +28,8 @@ type secman struct {
 	versionStage string
 }
 
-func NewConfigProvider(sess *session.Session, env, region string) provider.Provider {
-	svc := secretsmanager.New(sess, aws.NewConfig().WithRegion(region))
+func NewConfigProvider(sess *session.Session, env string) provider.Provider {
+	svc := secretsmanager.New(sess) // aws.NewConfig().WithRegion(region)
 	return &secman{
 		man:          svc,
 		env:          env,
